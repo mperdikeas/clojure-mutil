@@ -1,6 +1,2 @@
-pom.xml
-*jar
-/lib/
+*.class
 /classes/
-/targets/
-.lein-deps-sum
