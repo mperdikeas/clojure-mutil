@@ -2,6 +2,7 @@
   (:use [clojure.java.jdbc :as sql :only ()])
   (:use [clojure.repl])
   (:use [clojure.set :only (superset?)])
+  (:use [clojure.contrib.seq :only (positions)])
   (:use [clojure.walk :only (postwalk)])
   (:use [clojure.set :only (map-invert)]))
 
@@ -425,4 +426,43 @@
 
 (defn flat-mul [as bs]
   (strct1lvlFlatten (mul as bs)))
+
+(defn zippy [l1 l2]
+  (apply merge-with concat (map (fn [a b]{a [b]}) l1 l2)))
+
+(defn minCount2ndLevel [acollcoll]
+  (let [_ (unless (alltrue (map #(sequential? %) acollcoll)) (throw (RuntimeException.)))]
+    (apply min (map count acollcoll))))
+
+(defn maxCount2ndLevel [acollcoll]
+  (let [_ (unless (alltrue (map #(sequential? %) acollcoll)) (throw (RuntimeException.)))]
+    (apply max (map count acollcoll))))
+
+(defn count2ndLevel [acollcoll]
+  (let [_ (unless (alltrue (map #(sequential? %) acollcoll)) (throw (RuntimeException.)))
+        acollcoll-count-max (maxCount2ndLevel acollcoll)
+        acollcoll-count-min (minCount2ndLevel acollcoll)
+        _ (unless (= acollcoll-count-max acollcoll-count-min) (throw (RuntimeException.)))]
+    acollcoll-count-max))
+
+(defn sameElements [n acollcoll]
+  (let [acollcoll-count (minCount2ndLevel acollcoll)
+        _ (unless (>= acollcoll-count n) (throw (RuntimeException. )))
+        acollcoll-count-incr (map vector (range n) (repeat acollcoll))
+        acollcoll-count-eq (map (fn [ [n acollcoll] ]
+                                  (apply = (map #(nth % n) acollcoll)))
+                                acollcoll-count-incr)]
+    (alltrue acollcoll-count-eq)))
+
+(defn maxSameElements [acollcoll]
+  (let [n                                (minCount2ndLevel acollcoll)
+        sameElements-procession          (map vector (range 1 (inc n)) (repeat acollcoll))
+        sameElements-procession-result   (map (fn [[n acollcoll]]
+                                                      (sameElements n acollcoll))
+                                              sameElements-procession)]
+    (apply max 0 (map inc (positions #(= % true) sameElements-procession-result)))))
+
+(defn commonHead [acollcoll]
+  (let [n (maxSameElements acollcoll)]
+    (take n (first acollcoll))))
 
