@@ -1,6 +1,7 @@
 (ns mutil
   (:use [clojure.java.jdbc :as sql :only ()])
   (:use [clojure.repl])
+  (:use [clojure.string :only (join)])
   (:use [clojure.set :only (superset?)])
   (:use [clojure.contrib.seq :only (positions)])
   (:use [clojure.walk :only (postwalk)])
@@ -466,3 +467,35 @@
   (let [n (maxSameElements acollcoll)]
     (take n (first acollcoll))))
 
+(defn orderGraph 
+  "orders a directed graph in the form { :a '(), :b '(:a), :c '(:a), :d '(:b :c), :e '(:c)}
+   which maps each node to the nodes it points to. Returns a vector that corresponds to
+   an ordering of the nodes, such that all nodes pointed to by a node lie to its left, or
+   nil if such an ordering doesn't exist. The above graph would evaluate to vector:
+   [:a :b :c :d :e] (NB: there could also be other valid orderings for the above graph)"
+  [graph]
+  (let [graphWellFormed (fn [graph]
+                          (let [pointedNodes (apply concat (vals graph))
+                                pointedNodes-dontExist (coll-sub pointedNodes (keys graph))]
+                            (unless (empty? pointedNodes-dontExist)
+                                    (throw (RuntimeException. (join ", " (map name pointedNodes-dontExist)))))))
+        _ (graphWellFormed graph)
+        _spitRoot (fn [result graph]
+                   (if (empty? graph)
+                     []
+                     (let [root (first (filter #(empty? (second %))
+                                               graph))
+                           newGraph    (into {}
+                                             (for [ [k vs] (dissoc graph (first root))]
+                                               [k (filter
+                                                   #(not (= % (first root)))
+                                                   vs)]))]
+                       (if (nil? root)
+                         nil
+                         (if (empty? newGraph)
+                           (conj result (first root))
+                           (recur (conj result (first root)) newGraph))))))]
+    (_spitRoot [] graph)))
+
+(assert (= (orderGraph { :a '(), :b '(:a), :c '(:a), :d '(:b :c), :e '(:c)})
+           [:a :b :c :d :e])) ;; note: there could also, conceivably be other correct orderings of the above graph
