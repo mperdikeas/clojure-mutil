@@ -510,7 +510,7 @@
 
 (defn map-graph
   "takes a directional graph defined as two collections: one of nodes and another of edges
-   and transforms it into a graph representation in the form of map: node->list of nodes"
+   and transforms it into a graph representation in the form of map: node->set of nodes"
   [nodes edges]
   (let [edgenodes (distinct (concat (map first edges)
                                     (map second edges)))
@@ -518,12 +518,12 @@
         _ (unless (empty? edgenodes-nodes)
                   (throw (RuntimeException. (join "," edgenodes-nodes))))
         ]
-    (into {} (map #(vector % (or
-                                   ((zippy (map first edges)
-                                           (map second edges))
-                                    %)
-                                   '()))
-                  nodes)))) ;; TODO: change that using into{} TODO2: change that to return set of pointed-to nodes, not list.
+    (into {} (map #(vector % (into #{} (or
+                                        ((zippy (map first edges)
+                                                (map second edges))
+                                         %)
+                                        '())))
+                  nodes))))
 
 (assert (= (map-graph '(:a :b :c :d :e) '( (:a :b) (:a :c) (:a :d) (:b :d)))
-           {:e '(), :d '(), :c '(), :b [:d], :a '(:b :c :d)}))
+           {:e #{}, :d #{}, :c #{}, :b #{:d}, :a #{:b :c :d}}))
