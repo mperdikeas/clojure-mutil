@@ -406,7 +406,15 @@
 (defn coll-sub
   "removes from colla all items found in collb"
   [colla collb]
-     (filter #(not-in? collb %) colla))
+  (filter #(not-in? collb %) colla))
+
+(defn coll-sub-abs
+  "returns the absolute difference of two collections (i.e. the
+   union of all items present in one but not the other (with no indication
+   as to ownership"
+  [colla collb]
+  (concat (coll-sub colla collb)
+          (coll-sub collb colla)))
 
 (defn group-by-only
   [f coll]
@@ -499,3 +507,25 @@
 
 (assert (= (orderGraph { :a '(), :b '(:a), :c '(:a), :d '(:b :c), :e '(:c)})
            [:a :b :c :d :e])) ;; note: there could also, conceivably be other correct orderings of the above graph
+
+(defn map-graph
+  "takes a directional graph defined as two collections: one of nodes and another of edges
+   and transforms it into a graph representation in the form of map: node->list of nodes"
+  [nodes edges]
+  (let [edgenodes (distinct (concat (map first edges)
+                                    (map second edges)))
+        edgenodes-nodes (coll-sub edgenodes nodes)
+        _ (unless (empty? edgenodes-nodes)
+                  (throw (RuntimeException. (join "," edgenodes-nodes))))
+        ]
+    (let [interim (map #(vector % (or
+                                   ((zippy (map first edges)
+                                           (map second edges))
+                                    %)
+                                   '()))
+                       nodes)]
+      (zipmap (map first interim)
+              (map second interim))))) ;; TODO: change that using into{} TODO2: change that to return set of pointed-to nodes, not list.
+
+(assert (= (map-graph '(:a :b :c :d :e) '( (:a :b) (:a :c) (:a :d) (:b :d)))
+           {:e '(), :d '(), :c '(), :b [:d], :a '(:b :c :d)}))
