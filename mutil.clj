@@ -527,3 +527,36 @@
 
 (assert (= (map-graph '(:a :b :c :d :e) '( (:a :b) (:a :c) (:a :d) (:b :d)))
            {:e #{}, :d #{}, :c #{}, :b #{:d}, :a #{:b :c :d}}))
+
+(defn subtreenodes
+  "takes a tree 'mapgraph' in the form of a map: node->set of nodes and a given
+   node and returns all nodes in the subtree of that node
+   at any level - inefficient, non-tail-recursive implementation"
+  ([mapgraph node]
+     (subtreenodes mapgraph node true))
+  ([mapgraph node onlyChildren?]
+  (let [maxDepth (count mapgraph)
+        getChildren (fn _recur [i children mapgraph node]
+                      (let [directKids (mapgraph node)]
+                        (if (zero? i)
+                          children
+                          (let
+                              [allChildrenResults (map #(_recur (dec i) (conj children %) mapgraph %)
+                                                     directKids)]
+                            (into #{} (apply concat (if onlyChildren?
+                                                      #{}
+                                                      #{node})
+                                             children
+                                             allChildrenResults))))))]
+    (getChildren maxDepth #{} mapgraph node))))
+
+
+(let
+    [aTree {:a #{:b :c} :b #{:d :e} :c #{} :d #{} :e #{}}]
+  (assert (= (subtreenodes aTree :a false) #{:a :c :b :d :e}))
+  (assert (= (subtreenodes aTree :a ) #{:c :b :d :e}))
+  (assert (= (subtreenodes aTree :b true) #{:d :e}))
+  (assert (= (subtreenodes aTree :d false) #{:d}))
+  (assert (= (subtreenodes aTree :d true) #{})))
+
+                        
