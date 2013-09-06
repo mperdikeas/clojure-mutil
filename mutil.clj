@@ -559,4 +559,22 @@
   (assert (= (subtreenodes aTree :d false) #{:d}))
   (assert (= (subtreenodes aTree :d true) #{})))
 
+(defn take-while-more [pred n coll]
+  (let [ [head tail] (split-with pred coll) ]
+    (concat head (take n tail))))
+
+(assert (= (take-while-more #(<= % 4) -1 (range 10)) '(0 1 2 3 4)))
+
+(defn take-while-pred2-more [pred n coll]
+  (let [coll2 (drop 1 coll)
+        coll_and_coll2 (map vector coll coll2)]
+    (map first (take-while-more #(pred (first  %)
+                                       (second %))
+                                n
+                                coll_and_coll2))))
+
+(assert (= (take-while-pred2-more #(not= %1 %2) 1 '( 1 2 3 4 5 5 6))
+           '(1 2 3 4 5)))
+
+
                         
