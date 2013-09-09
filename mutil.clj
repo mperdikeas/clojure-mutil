@@ -576,5 +576,16 @@
 (assert (= (take-while-pred2-more #(not= %1 %2) 1 '( 1 2 3 4 5 5 6))
            '(1 2 3 4 5)))
 
+(defn duplicates?
+  "true if <coll> contains any duplicates disregarding
+   any values found in the optional <except> set"
+  ([coll except]
+     (if (empty? coll)
+       false
+       (let [except (set except)]
+         (not (apply distinct? (remove #(contains? except %) coll))))))
+  ([coll]
+     (duplicates? coll #{})))
+
 
                         
