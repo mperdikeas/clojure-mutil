@@ -576,16 +576,35 @@
 (assert (= (take-while-pred2-more #(not= %1 %2) 1 '( 1 2 3 4 5 5 6))
            '(1 2 3 4 5)))
 
-(defn duplicates?
-  "true if <coll> contains any duplicates disregarding
-   any values found in the optional <except> set"
+(defn __duplicates-v1?
   ([coll except]
      (if (empty? coll)
        false
        (let [except (set except)]
          (not (apply distinct? (remove #(contains? except %) coll))))))
   ([coll]
-     (duplicates? coll #{})))
+     (__duplicates-v1? coll #{})))
+
+(defn __duplicates-v2?
+  ([coll except]
+    (let [except (set except)
+          filtered (remove #(contains? except %) coll)]
+      (not= filtered (distinct filtered))))
+  ([coll]
+     (__duplicates-v2? coll #{})))
+
+(defn duplicates? ;; http://stackoverflow.com/questions/18688833/clojure-idiomatic-way-to-find-duplicate-values-in-a-lazy-collection-excluding-s
+    "true if <coll> contains any duplicates disregarding
+    any values found in the optional <except> set"
+    ([coll except]
+       (let
+           [v1 (__duplicates-v1? coll except)
+            v2 (__duplicates-v2? coll except)]
+         (if (= v1 v2)
+           v1
+           (throw (RuntimeException.)))))
+    ([coll]
+       (duplicates? coll #{})))
 
 
                         
