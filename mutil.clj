@@ -608,3 +608,11 @@
 
 
                         
+(defn panicIfNotFile [file]
+  (unless (and (.exists file) (.isFile file))
+          (throw (RuntimeException. (format "File %s doesn't exist or is not file"
+                                            (.getPath file))))))
+(defn panicIfNotDirectory [file]
+  (unless (and (.exists file) (.isDirectory file))
+          (throw (RuntimeException. (format "File %s doesn't exist or is not directory"
+                                            (.getPath file))))))
